@@ -105,7 +105,8 @@ class Agent(Generic[Context]):
 		browser_context: BrowserContext | None = None,
 		browser_profile: BrowserProfile | None = None,
 		browser_session: BrowserSession | None = None,
-		controller: Controller[Context] = Controller(),
+		controller: Controller[Context] | None = None,
+		search_engine: str = 'google',
 		# Initial agent run parameters
 		sensitive_data: dict[str, str | dict[str, str]] | None = None,
 		initial_actions: list[dict[str, dict[str, Any]]] | None = None,
@@ -170,7 +171,7 @@ class Agent(Generic[Context]):
 		# Core components
 		self.task = task
 		self.llm = llm
-		self.controller = controller
+		self.controller = controller or Controller(search_engine=search_engine)
 		self.sensitive_data = sensitive_data
 
 		self.settings = AgentSettings(
