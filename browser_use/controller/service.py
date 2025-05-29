@@ -4,6 +4,7 @@ import json
 import logging
 import re
 from typing import Generic, TypeVar, cast
+from urllib.parse import quote_plus
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import PromptTemplate
@@ -92,11 +93,11 @@ class Controller(Generic[Context]):
 		async def search(params: SearchAction, browser_session: BrowserSession):
 			# Define search URLs for different engines
 			search_engines = {
-				'google': f'https://www.google.com/search?q={params.query}&udm=14',
-				'bing': f'https://www.bing.com/search?q={params.query}',
-				'duckduckgo': f'https://duckduckgo.com/?q={params.query}',
-				'yahoo': f'https://search.yahoo.com/search?p={params.query}',
-				'baidu': f'https://www.baidu.com/s?wd={params.query}',
+				'google': f'https://www.google.com/search?q={quote_plus(params.query)}&udm=14',
+				'bing': f'https://www.bing.com/search?q={quote_plus(params.query)}',
+				'duckduckgo': f'https://duckduckgo.com/?q={quote_plus(params.query)}',
+				'yahoo': f'https://search.yahoo.com/search?p={quote_plus(params.query)}',
+				'baidu': f'https://www.baidu.com/s?wd={quote_plus(params.query)}',
 			}
 
 			# Get the search URL for the configured engine

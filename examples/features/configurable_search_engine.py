@@ -114,15 +114,20 @@ async def demo_invalid_search_engine():
 		print(f'✅ Caught expected error: {e}')
 
 
-if __name__ == '__main__':
+async def main():
+	"""Main function to run all demos in a single event loop"""
 	print('🔍 Configurable Search Engine Demos')
 	print('=' * 50)
 
-	asyncio.run(demo_google_search())
-	asyncio.run(demo_duckduckgo_search())
-	asyncio.run(demo_bing_search())
-	asyncio.run(demo_baidu_search())
-	asyncio.run(demo_controller_configuration())
-	asyncio.run(demo_invalid_search_engine())
+	await demo_google_search()
+	await demo_duckduckgo_search()
+	await demo_bing_search()
+	await demo_baidu_search()
+	await demo_controller_configuration()
+	await demo_invalid_search_engine()
 
 	print('\n✅ All demos completed!')
+
+
+if __name__ == '__main__':
+	asyncio.run(main())

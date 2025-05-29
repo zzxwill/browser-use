@@ -106,7 +106,6 @@ class Agent(Generic[Context]):
 		browser_profile: BrowserProfile | None = None,
 		browser_session: BrowserSession | None = None,
 		controller: Controller[Context] | None = None,
-		search_engine: str = 'google',
 		# Initial agent run parameters
 		sensitive_data: dict[str, str | dict[str, str]] | None = None,
 		initial_actions: list[dict[str, dict[str, Any]]] | None = None,
@@ -164,6 +163,7 @@ class Agent(Generic[Context]):
 		enable_memory: bool = True,
 		memory_config: MemoryConfig | None = None,
 		source: str | None = None,
+		search_engine: str = 'google',  # Moved to end to avoid breaking existing positional arguments
 	):
 		if page_extraction_llm is None:
 			page_extraction_llm = llm
