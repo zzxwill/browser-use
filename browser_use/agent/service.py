@@ -16,6 +16,7 @@ from typing import Any, Generic, TypeVar
 from dotenv import load_dotenv
 
 from browser_use.browser.session import DEFAULT_BROWSER_PROFILE
+from browser_use.i18n import _
 
 load_dotenv()
 
@@ -266,7 +267,10 @@ class Agent(Generic[Context]):
 			self.settings.use_vision_for_planner = False
 
 		logger.info(
-			f'🧠 Starting a browser-use agent {self.version} with base_model={self.model_name}'
+			_('🧠 Starting a browser-use agent {version} with base_model={model}').format(
+				version=self.version, 
+				model=self.model_name
+			) +
 			f'{" +tools" if self.tool_calling_method == "function_calling" else ""}'
 			f'{" +rawtools" if self.tool_calling_method == "raw" else ""}'
 			f'{" +vision" if self.settings.use_vision else ""}'
@@ -418,11 +422,6 @@ class Agent(Generic[Context]):
 		self.telemetry = ProductTelemetry()
 
 		if self.settings.save_conversation_path:
-			try:
-				from browser_use.i18n import _
-			except ImportError:
-				def _(text):
-					return text
 			self._logger.info(_('Saving conversation to {path}').format(path=self.settings.save_conversation_path))
 		self._external_pause_event = asyncio.Event()
 		self._external_pause_event.set()
@@ -1938,9 +1937,9 @@ class Agent(Generic[Context]):
 			plan = self._remove_think_tags(plan)
 		try:
 			plan_json = json.loads(plan)
-			logger.info(f'Planning Analysis:\n{json.dumps(plan_json, indent=4)}')
+			logger.info(_('Planning Analysis:') + f'\n{json.dumps(plan_json, indent=4)}')
 		except json.JSONDecodeError:
-			logger.info(f'Planning Analysis:\n{plan}')
+			logger.info(_('Planning Analysis:') + f'\n{plan}')
 		except Exception as e:
 			logger.debug(f'Error parsing planning analysis: {e}')
 			logger.info(f'Plan: {plan}')

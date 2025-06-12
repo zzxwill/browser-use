@@ -31,6 +31,7 @@ from browser_use.dom.clickable_element_processor.service import ClickableElement
 from browser_use.dom.service import DomService
 from browser_use.dom.views import DOMElementNode, SelectorMap
 from browser_use.utils import match_url_with_domain_pattern, time_execution_async, time_execution_sync
+from browser_use.i18n import _
 
 # Check if running in Docker
 IN_DOCKER = os.environ.get('IN_DOCKER', 'false').lower()[0] in 'ty1'
@@ -417,7 +418,7 @@ class BrowserSession(BaseModel):
 		if not self.cdp_url:
 			return  # no cdp_url provided, nothing to do
 
-		logger.info(f'🌎 Connecting to existing remote chromium-based browser over CDP: {self.cdp_url}')
+		logger.info(_('🌎 Connecting to existing remote chromium-based browser over CDP: {url}').format(url=self.cdp_url))
 		self.browser = self.browser or await self.playwright.chromium.connect_over_cdp(
 			self.cdp_url,
 			**self.browser_profile.kwargs_for_connect().model_dump(),
@@ -433,7 +434,7 @@ class BrowserSession(BaseModel):
 		if self.browser and not self.browser_context:
 			if self.browser.contexts:
 				self.browser_context = self.browser.contexts[0]
-				logger.info(f'🌎 Using first browser_context available in existing browser: {self.browser_context}')
+				logger.info(_('🌎 Using first browser_context available in existing browser: {context}').format(context=self.browser_context))
 			else:
 				self.browser_context = await self.browser.new_context(
 					**self.browser_profile.kwargs_for_new_context().model_dump()
@@ -447,10 +448,17 @@ class BrowserSession(BaseModel):
 
 		# if we still have no browser_context by now, launch a new local one using launch_persistent_context()
 		if not self.browser_context:
+			try:
+				from browser_use.i18n import _
+			except ImportError:
+				def _(text):
+					return text
 			logger.info(
-				f'🌎 Launching local browser '
-				f'driver={str(type(self.playwright).__module__).split(".")[0]} channel={self.browser_profile.channel.name.lower()} '
-				f'user_data_dir={_log_pretty_path(self.browser_profile.user_data_dir) if self.browser_profile.user_data_dir else "<incognito>"}'
+				_('🌎 Launching local browser driver={driver} channel={channel} user_data_dir={user_data_dir}').format(
+					driver=str(type(self.playwright).__module__).split(".")[0],
+					channel=self.browser_profile.channel.name.lower(),
+					user_data_dir=_log_pretty_path(self.browser_profile.user_data_dir) if self.browser_profile.user_data_dir else "<incognito>"
+				)
 			)
 			if not self.browser_profile.user_data_dir:
 				# if no user_data_dir is provided, launch an incognito context with no persistent user_data_dir

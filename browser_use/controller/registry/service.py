@@ -24,6 +24,7 @@ from browser_use.telemetry.views import (
 	RegisteredFunction,
 )
 from browser_use.utils import match_url_with_domain_pattern, time_execution_async
+from browser_use.i18n import _
 
 Context = TypeVar('Context')
 
@@ -356,9 +357,9 @@ class Registry(Generic[Context]):
 			):
 				raise RuntimeError(str(e)) from e
 			else:
-				raise RuntimeError(f'Error executing action {action_name}: {str(e)}') from e
+				raise RuntimeError(_('Error executing action {action}: {error}').format(action=action_name, error=str(e))) from e
 		except Exception as e:
-			raise RuntimeError(f'Error executing action {action_name}: {str(e)}') from e
+			raise RuntimeError(_('Error executing action {action}: {error}').format(action=action_name, error=str(e))) from e
 
 	def _log_sensitive_data_usage(self, placeholders_used: set[str], current_url: str | None) -> None:
 		"""Log when sensitive data is being used on a page"""

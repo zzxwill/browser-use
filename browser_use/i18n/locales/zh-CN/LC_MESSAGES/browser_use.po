@@ -222,6 +222,29 @@ msgstr "⚠️⚠️⚠️ 提供了Agent(sensitive_data=•••••••�
 msgid "🧠 Starting a browser-use agent {version} with base_model={model}"
 msgstr "🧠 启动browser-use代理 {version}，基础模型={model}"
 
+# Missing messages from logs
+msgid "🌎 Connecting to existing remote chromium-based browser over CDP: {url}"
+msgstr "🌎 连接到现有远程基于Chromium的浏览器，通过CDP: {url}"
+
+msgid "🌎 Using first browser_context available in existing browser: {context}"
+msgstr "🌎 使用现有浏览器中第一个可用的browser_context: {context}"
+
+msgid "Planning Analysis:"
+msgstr "规划分析："
+
+msgid "Error executing action {action}: {error}"
+msgstr "执行动作 {action} 时出错：{error}"
+
+msgid "[{task_id}] Agent initialized and ready to run"
+msgstr "[{task_id}] 代理已初始化并准备运行"
+
+msgid "[{task_id}] Agent started running"
+msgstr "[{task_id}] 代理开始运行"
+
+msgid "🌎 Launching local browser driver={driver} channel={channel} user_data_dir={user_data_dir}"
+msgstr "🌎 启动本地浏览器 驱动={driver} 通道={channel} 用户数据目录={user_data_dir}"
+
+
 # Additional agent step messages
 msgid "🚀 Starting task: {task}"
 msgstr "🚀 开始任务：{task}"
@@ -252,7 +275,4 @@ msgid "🧠 LLM call => {library} [✉️ {msg_count} msg, ~{tokens} tk, {chars}
 msgstr "🧠 LLM 调用 => {library} [✉️ {msg_count} 条消息，~{tokens} 令牌，{chars} 字符{image_status}] {output_format}{tool_info}"
 
 msgid " ↳ Spawned browser_pid={pid} {path}"
-msgstr " ↳ 生成浏览器进程 browser_pid={pid} {path}"
-
-msgid "{emoji} Eval: {evaluation}"
-msgstr "{emoji} 评估：{evaluation}" 
+msgstr " ↳ 生成浏览器进程 browser_pid={pid} {path}" 
