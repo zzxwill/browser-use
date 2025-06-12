@@ -130,6 +130,7 @@ class Agent(Generic[Context]):
 		retry_delay: int = 10,
 		override_system_message: str | None = None,
 		extend_system_message: str | None = None,
+		language: str = 'en',
 		max_input_tokens: int = 128000,
 		validate_output: bool = False,
 		message_context: str | None = None,
@@ -164,6 +165,13 @@ class Agent(Generic[Context]):
 		if page_extraction_llm is None:
 			page_extraction_llm = llm
 
+		if language and language != 'en':
+			if language.startswith('zh'):
+				chinese_instruction = "IMPORTANT LANGUAGE INSTRUCTION:\n- You MUST communicate in Chinese (中文) for ALL your responses\n- Your evaluation_previous_goal, memory, and next_goal fields must be in Chinese\n- All extracted content and communication should be in Chinese\n- When encountering English websites, translate key information to Chinese for the user\n- Maintain professional and clear Chinese communication throughout"
+				if extend_system_message:
+					extend_system_message = f"{extend_system_message}\n\n{chinese_instruction}"
+				else:
+					extend_system_message = chinese_instruction
 		# Core components
 		self.task = task
 		self.llm = llm
@@ -179,6 +187,7 @@ class Agent(Generic[Context]):
 			retry_delay=retry_delay,
 			override_system_message=override_system_message,
 			extend_system_message=extend_system_message,
+			language=language,
 			max_input_tokens=max_input_tokens,
 			validate_output=validate_output,
 			message_context=message_context,
@@ -1799,7 +1808,7 @@ class Agent(Generic[Context]):
 
 		# Create planner message history using full message history with all available actions
 		planner_messages = [
-			PlannerPrompt(all_actions).get_system_message(
+			PlannerPrompt(all_actions, language=self.settings.language).get_system_message(
 				is_planner_reasoning=self.settings.is_planner_reasoning,
 				extended_planner_system_prompt=self.settings.extend_planner_system_message,
 			),
