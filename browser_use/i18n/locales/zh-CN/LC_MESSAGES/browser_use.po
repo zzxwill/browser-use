@@ -276,3 +276,72 @@ msgstr "🧠 LLM 调用 => {library} [✉️ {msg_count} 条消息，~{tokens} �
 
 msgid " ↳ Spawned browser_pid={pid} {path}"
 msgstr " ↳ 生成浏览器进程 browser_pid={pid} {path}" 
+
+# Step messages (duplicates removed)
+
+msgid "{emoji} Eval: {evaluation}"
+msgstr "{emoji} 评估：{evaluation}"
+
+# Action messages
+msgid "☑️ Executed action {}/{}: {}"
+msgstr "☑️ Executed action {}/{}：{}"
+
+msgid "⌨️ Sent keys: {}"
+msgstr "⌨️ 发送了按键：{}"
+
+msgid "🖱️ Clicked: {}"
+msgstr "🖱️ 点击了：{}"
+
+msgid "📝 Typed: {}"
+msgstr "📝 输入了：{}"
+
+msgid "🔍 Searched for \"{}\""
+msgstr "🔍 搜索了 \"{}\""
+
+# Status messages
+msgid "Success"
+msgstr "Success"
+
+msgid "Failed"
+msgstr "Failed"
+
+msgid "Unknown"
+msgstr "Unknown"
+
+# Common action descriptions
+msgid "send_keys"
+msgstr "发送按键"
+
+msgid "click"
+msgstr "点击"
+
+msgid "type"
+msgstr "输入"
+
+msgid "go_to_url"
+msgstr "访问网址"
+
+# MyController specific translations
+msgid "Search the query in Baidu in the current tab, the query should be a search query like humans search in Baidu, concrete and not vague or super long. More the single most important items."
+msgstr "在当前标签页的百度中搜索查询，查询应该是像人类在百度中搜索的搜索查询，具体而不模糊或过长。更多的单个最重要的项目。"
+
+msgid "🔍 Searched for \\\"{query}\\\" in Baidu"
+msgstr "🔍 在百度搜索了\\\"{query}\\\""
+
+msgid "Pause agent"
+msgstr "暂停代理"
+
+msgid "👩 Pause agent, reason: {reason}"
+msgstr "👩 暂停代理，原因：{reason}"
+
+msgid "Extract page content to retrieve specific information from the page, e.g. all company names, a specific description, all information about xyc, 4 links with companies in structured format. Use include_attributes to specify what elements should be included, e.g. {\\\"name\\\": True, \\\"link\\\": True, \\\"description\\\": True}"
+msgstr "提取页面内容以从页面中检索特定信息，例如所有公司名称、特定描述、关于xyc的所有信息、4个具有结构化格式公司的链接。使用include_attributes指定应包含哪些元素，例如{\\\"name\\\": True, \\\"link\\\": True, \\\"description\\\": True}"
+
+msgid "Your task is to extract the content of the page. You will be given a page and a goal and you should extract all relevant information around this goal from the page. If the goal is vague, summarize all informations on the page and tell me what you found. Return structured, easy-to-read markdown."
+msgstr "您的任务是提取页面的内容。您将获得一个页面和一个目标，您应该从页面中提取围绕此目标的所有相关信息。如果目标模糊，请总结页面上的所有信息并告诉我您发现了什么。返回结构化、易于阅读的markdown。"
+
+msgid "📄 Extracted from page\\n: {content}\\n"
+msgstr "📄 从页面提取\\n：{content}\\n"
+
+msgid "Error extracting content: {error}"
+msgstr "提取内容错误：{error}" 

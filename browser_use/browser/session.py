@@ -448,11 +448,6 @@ class BrowserSession(BaseModel):
 
 		# if we still have no browser_context by now, launch a new local one using launch_persistent_context()
 		if not self.browser_context:
-			try:
-				from browser_use.i18n import _
-			except ImportError:
-				def _(text):
-					return text
 			logger.info(
 				_('🌎 Launching local browser driver={driver} channel={channel} user_data_dir={user_data_dir}').format(
 					driver=str(type(self.playwright).__module__).split(".")[0],

@@ -78,13 +78,6 @@ SKIP_LLM_API_KEY_VERIFICATION = os.environ.get('SKIP_LLM_API_KEY_VERIFICATION', 
 def log_response(response: AgentOutput, registry=None) -> None:
 	"""Utility function to log the model's response."""
 
-	# Try to use i18n for logging messages
-	try:
-		from browser_use.i18n import _
-	except ImportError:
-		def _(text):
-			return text
-
 	if 'Success' in response.current_state.evaluation_previous_goal:
 		emoji = '👍'
 	elif 'Failed' in response.current_state.evaluation_previous_goal:
@@ -92,13 +85,6 @@ def log_response(response: AgentOutput, registry=None) -> None:
 	else:
 		emoji = '❓'
 
-	# Try to use i18n for logging messages
-	try:
-		from browser_use.i18n import _
-	except ImportError:
-		def _(text):
-			return text
-	
 	logger.info(_('{emoji} Eval: {evaluation}').format(emoji=emoji, evaluation=response.current_state.evaluation_previous_goal))
 	logger.info(_('🧠 Memory: {memory}').format(memory=response.current_state.memory))
 	logger.info(_('🎯 Next goal: {goal}').format(goal=response.current_state.next_goal))
@@ -1159,24 +1145,12 @@ class Agent(Generic[Context]):
 
 	def _log_agent_run(self) -> None:
 		"""Log the agent run"""
-		try:
-			from browser_use.i18n import _
-		except ImportError:
-			def _(text):
-				return text
-		
 		self._logger.info(_('🚀 Starting task: {task}').format(task=self.task))
 
 		logger.debug(f'Version: {self.version}, Source: {self.source}')
 
 	def _log_step_context(self, current_page, browser_state_summary) -> None:
 		"""Log step context information"""
-		try:
-			from browser_use.i18n import _
-		except ImportError:
-			def _(text):
-				return text
-		
 		url_short = current_page.url[:50] + '...' if len(current_page.url) > 50 else current_page.url
 		interactive_count = len(browser_state_summary.selector_map) if browser_state_summary else 0
 		self._logger.info(
@@ -1232,12 +1206,6 @@ class Agent(Generic[Context]):
 		if not result:
 			return
 
-		try:
-			from browser_use.i18n import _
-		except ImportError:
-			def _(text):
-				return text
-
 		step_duration = time.time() - step_start_time
 		action_count = len(result)
 
@@ -1283,12 +1251,6 @@ class Agent(Generic[Context]):
 
 		term_width = shutil.get_terminal_size((80, 20)).columns
 		print('=' * term_width)
-		try:
-			from browser_use.i18n import _
-		except ImportError:
-			def _(text):
-				return text
-		
 		logger.info(
 			_('🧠 LLM call => {library} [✉️ {msg_count} msg, ~{tokens} tk, {chars} char{image_status}] {output_format}{tool_info}').format(
 				library=self.chat_model_library, 
@@ -1546,12 +1508,6 @@ class Agent(Generic[Context]):
 				new_target = new_selector_map.get(action.get_index())  # type: ignore
 				new_target_hash = new_target.hash.branch_path_hash if new_target else None
 				if orig_target_hash != new_target_hash:
-					try:
-						from browser_use.i18n import _
-					except ImportError:
-						def _(text):
-							return text
-					
 					msg = _('Element index changed after action {action} / {total}, because page changed.').format(
 						action=i, total=len(actions)
 					)
@@ -1584,13 +1540,6 @@ class Agent(Generic[Context]):
 				# Get action name from the action model
 				action_data = action.model_dump(exclude_unset=True)
 				action_name = next(iter(action_data.keys())) if action_data else 'unknown'
-				
-				try:
-					from browser_use.i18n import _
-				except ImportError:
-					def _(text):
-						return text
-				
 				logger.info(_('☑️ Executed action {current}/{total}: {action}').format(
 					current=i + 1, total=len(actions), action=action_name
 				))
@@ -1658,13 +1607,6 @@ class Agent(Generic[Context]):
 
 	async def log_completion(self) -> None:
 		"""Log the completion of the task"""
-		# Try to use i18n for logging messages
-		try:
-			from browser_use.i18n import _
-		except ImportError:
-			def _(text):
-				return text
-		
 		if self.state.history.is_successful():
 			logger.info('✅ Task completed successfully')
 		else:
