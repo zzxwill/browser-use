@@ -32,6 +32,14 @@ from browser_use.controller.views import (
 )
 from browser_use.utils import time_execution_sync
 
+# Import i18n for translation support
+try:
+	from browser_use.i18n import _
+except ImportError:
+	# Fallback if i18n is not available
+	def _(text):
+		return text
+
 logger = logging.getLogger(__name__)
 
 
@@ -92,7 +100,7 @@ class Controller(Generic[Context]):
 			else:
 				page = await browser_session.create_new_tab(search_url)
 
-			msg = f'🔍  Searched for "{params.query}" in Google'
+			msg = _('🔍 Searched for "{query}" in Google').format(query=params.query)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -104,21 +112,21 @@ class Controller(Generic[Context]):
 				await page.wait_for_load_state()
 			else:
 				page = await browser_session.create_new_tab(params.url)
-			msg = f'🔗  Navigated to {params.url}'
+			msg = _('🔗 Navigated to {url}').format(url=params.url)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
 		@self.registry.action('Go back', param_model=NoParamsAction)
 		async def go_back(params: NoParamsAction, browser_session: BrowserSession):
 			await browser_session.go_back()
-			msg = '🔙  Navigated back'
+			msg = _('🔙 Navigated back')
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
 		# wait for x seconds
 		@self.registry.action('Wait for x seconds default 3')
 		async def wait(seconds: int = 3):
-			msg = f'🕒  Waiting for {seconds} seconds'
+			msg = _('🕒 Waiting for {seconds} seconds').format(seconds=seconds)
 			logger.info(msg)
 			await asyncio.sleep(seconds)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
@@ -129,14 +137,14 @@ class Controller(Generic[Context]):
 			# Browser is now a BrowserSession itself
 
 			if params.index not in await browser_session.get_selector_map():
-				raise Exception(f'Element with index {params.index} does not exist - retry or use alternative actions')
+				raise Exception(_('Element with index {index} does not exist - retry or use alternative actions').format(index=params.index))
 
 			element_node = await browser_session.get_dom_element_by_index(params.index)
 			initial_pages = len(browser_session.tabs)
 
 			# if element has file uploader then dont click
 			if await browser_session.find_file_upload_element_by_index(params.index) is not None:
-				msg = f'Index {params.index} - has an element which opens file upload dialog. To upload files please use a specific function to upload files '
+				msg = _('Index {index} - has an element which opens file upload dialog. To upload files please use a specific function to upload files').format(index=params.index)
 				logger.info(msg)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -145,14 +153,17 @@ class Controller(Generic[Context]):
 			try:
 				download_path = await browser_session._click_element_node(element_node)
 				if download_path:
-					msg = f'💾  Downloaded file to {download_path}'
+					msg = _('💾 Downloaded file to {path}').format(path=download_path)
 				else:
-					msg = f'🖱️  Clicked button with index {params.index}: {element_node.get_all_text_till_next_clickable_element(max_depth=2)}'
+					msg = _('🖱️ Clicked button with index {index}: {text}').format(
+						index=params.index, 
+						text=element_node.get_all_text_till_next_clickable_element(max_depth=2)
+					)
 
 				logger.info(msg)
 				logger.debug(f'Element xpath: {element_node.xpath}')
 				if len(browser_session.tabs) > initial_pages:
-					new_tab_msg = 'New tab opened - switching to it'
+					new_tab_msg = _('New tab opened - switching to it')
 					msg += f' - {new_tab_msg}'
 					logger.info(new_tab_msg)
 					await browser_session.switch_to_tab(-1)
@@ -167,14 +178,14 @@ class Controller(Generic[Context]):
 		)
 		async def input_text(params: InputTextAction, browser_session: BrowserSession, has_sensitive_data: bool = False):
 			if params.index not in await browser_session.get_selector_map():
-				raise Exception(f'Element index {params.index} does not exist - retry or use alternative actions')
+				raise Exception(_('Element index {index} does not exist - retry or use alternative actions').format(index=params.index))
 
 			element_node = await browser_session.get_dom_element_by_index(params.index)
 			await browser_session._input_text_element_node(element_node, params.text)
 			if not has_sensitive_data:
-				msg = f'⌨️  Input {params.text} into index {params.index}'
+				msg = _('⌨️ Input {text} into index {index}').format(text=params.text, index=params.index)
 			else:
-				msg = f'⌨️  Input sensitive data into index {params.index}'
+				msg = _('⌨️ Input sensitive data into index {index}').format(index=params.index)
 			logger.info(msg)
 			logger.debug(f'Element xpath: {element_node.xpath}')
 			return ActionResult(extracted_content=msg, include_in_memory=True)
@@ -188,7 +199,7 @@ class Controller(Generic[Context]):
 
 			await page.emulate_media(media='screen')
 			await page.pdf(path=sanitized_filename, format='A4', print_background=False)
-			msg = f'Saving page with URL {page.url} as PDF to ./{sanitized_filename}'
+			msg = _('Saving page with URL {url} as PDF to ./{filename}').format(url=page.url, filename=sanitized_filename)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -199,14 +210,14 @@ class Controller(Generic[Context]):
 			# Wait for tab to be ready and ensure references are synchronized
 			page = await browser_session.get_current_page()
 			await page.wait_for_load_state()
-			msg = f'🔄  Switched to tab {params.page_id}'
+			msg = _('🔄 Switched to tab {page_id}').format(page_id=params.page_id)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
 		@self.registry.action('Open a specific url in new tab', param_model=OpenTabAction)
 		async def open_tab(params: OpenTabAction, browser_session: BrowserSession):
 			await browser_session.create_new_tab(params.url)
-			msg = f'🔗  Opened new tab with {params.url}'
+			msg = _('🔗 Opened new tab with {url}').format(url=params.url)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -218,7 +229,9 @@ class Controller(Generic[Context]):
 			await page.close()
 			new_page = await browser_session.get_current_page()
 			new_page_idx = browser_session.tabs.index(new_page)
-			msg = f'❌  Closed tab #{params.page_id} with {url}, now focused on tab #{new_page_idx} with url {new_page.url}'
+			msg = _('❌ Closed tab #{page_id} with {url}, now focused on tab #{new_tab_idx} with url {new_url}').format(
+				page_id=params.page_id, url=url, new_tab_idx=new_page_idx, new_url=new_page.url
+			)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -250,12 +263,12 @@ class Controller(Generic[Context]):
 			template = PromptTemplate(input_variables=['goal', 'page'], template=prompt)
 			try:
 				output = await page_extraction_llm.ainvoke(template.format(goal=goal, page=content))
-				msg = f'📄  Extracted from page\n: {output.content}\n'
+				msg = _('📄 Extracted from page') + f'\n: {output.content}\n'
 				logger.info(msg)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 			except Exception as e:
 				logger.debug(f'Error extracting content: {e}')
-				msg = f'📄  Extracted from page\n: {content}\n'
+				msg = _('📄 Extracted from page') + f'\n: {content}\n'
 				logger.info(msg)
 				return ActionResult(extracted_content=msg)
 
@@ -299,8 +312,8 @@ class Controller(Generic[Context]):
 				await page.evaluate('(y) => window.scrollBy(0, y)', dy)
 				logger.debug('Smart scroll failed; used window.scrollBy fallback', exc_info=e)
 
-			amount_str = f'{params.amount} pixels' if params.amount is not None else 'one page'
-			msg = f'🔍 Scrolled down the page by {amount_str}'
+			amount_str = _('{amount} pixels').format(amount=params.amount) if params.amount is not None else _('one page')
+			msg = _('🔍 Scrolled down the page by {amount}').format(amount=amount_str)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -318,8 +331,8 @@ class Controller(Generic[Context]):
 				await page.evaluate('(y) => window.scrollBy(0, y)', dy)
 				logger.debug('Smart scroll failed; used window.scrollBy fallback', exc_info=e)
 
-			amount_str = f'{params.amount} pixels' if params.amount is not None else 'one page'
-			msg = f'🔍 Scrolled up the page by {amount_str}'
+			amount_str = _('{amount} pixels').format(amount=params.amount) if params.amount is not None else _('one page')
+			msg = _('🔍 Scrolled up the page by {amount}').format(amount=amount_str)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -342,7 +355,7 @@ class Controller(Generic[Context]):
 							raise e
 				else:
 					raise e
-			msg = f'⌨️  Sent keys: {params.keys}'
+			msg = _('⌨️ Sent keys: {keys}').format(keys=params.keys)
 			logger.info(msg)
 			return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -370,7 +383,7 @@ class Controller(Generic[Context]):
 						if is_visible and bbox is not None and bbox['width'] > 0 and bbox['height'] > 0:
 							await element.scroll_into_view_if_needed()
 							await asyncio.sleep(0.5)  # Wait for scroll to complete
-							msg = f'🔍  Scrolled to text: {text}'
+							msg = _('🔍 Scrolled to text: {text}').format(text=text)
 							logger.info(msg)
 							return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -378,12 +391,12 @@ class Controller(Generic[Context]):
 						logger.debug(f'Locator attempt failed: {str(e)}')
 						continue
 
-				msg = f"Text '{text}' not found or not visible on page"
+				msg = _("Text '{text}' not found or not visible on page").format(text=text)
 				logger.info(msg)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 
 			except Exception as e:
-				msg = f"Failed to scroll to text '{text}': {str(e)}"
+				msg = _("Failed to scroll to text '{text}': {error}").format(text=text, error=str(e))
 				logger.error(msg)
 				return ActionResult(error=msg, include_in_memory=True)
 
@@ -453,7 +466,7 @@ class Controller(Generic[Context]):
 
 			except Exception as e:
 				logger.error(f'Failed to get dropdown options: {str(e)}')
-				msg = f'Error getting options: {str(e)}'
+				msg = _('Error getting options: {error}').format(error=str(e))
 				logger.info(msg)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 
@@ -473,7 +486,9 @@ class Controller(Generic[Context]):
 			# Validate that we're working with a select element
 			if dom_element.tag_name != 'select':
 				logger.error(f'Element is not a select! Tag: {dom_element.tag_name}, Attributes: {dom_element.attributes}')
-				msg = f'Cannot select option: Element with index {index} is a {dom_element.tag_name}, not a select'
+				msg = _('Cannot select option: Element with index {index} is a {tag_name}, not a select').format(
+					index=index, tag_name=dom_element.tag_name
+				)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 
 			logger.debug(f"Attempting to select '{text}' using xpath: {dom_element.xpath}")
@@ -532,7 +547,9 @@ class Controller(Generic[Context]):
 								await frame.locator('//' + dom_element.xpath).nth(0).select_option(label=text, timeout=1000)
 							)
 
-							msg = f'selected option {text} with value {selected_option_values}'
+							msg = _('selected option {text} with value {values}').format(
+								text=text, values=selected_option_values
+							)
 							logger.info(msg + f' in frame {frame_index}')
 
 							return ActionResult(extracted_content=msg, include_in_memory=True)
@@ -544,12 +561,12 @@ class Controller(Generic[Context]):
 
 					frame_index += 1
 
-				msg = f"Could not select option '{text}' in any frame"
+				msg = _("Could not select option '{text}' in any frame").format(text=text)
 				logger.info(msg)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 
 			except Exception as e:
-				msg = f'Selection failed: {str(e)}'
+				msg = _('Selection failed: {error}').format(error=str(e))
 				logger.error(msg)
 				return ActionResult(error=msg, include_in_memory=True)
 
@@ -703,7 +720,8 @@ class Controller(Generic[Context]):
 					)
 
 					if not source_element or not target_element:
-						error_msg = f'Failed to find {"source" if not source_element else "target"} element'
+						element_type = "source" if not source_element else "target"
+						error_msg = _('Failed to find {element_type} element').format(element_type=element_type)
 						return ActionResult(error=error_msg, include_in_memory=True)
 
 					source_coords, target_coords = await get_element_coordinates(
@@ -711,7 +729,8 @@ class Controller(Generic[Context]):
 					)
 
 					if not source_coords or not target_coords:
-						error_msg = f'Failed to determine {"source" if not source_coords else "target"} coordinates'
+						coord_type = "source" if not source_coords else "target"
+						error_msg = _('Failed to determine {coord_type} coordinates').format(coord_type=coord_type)
 						return ActionResult(error=error_msg, include_in_memory=True)
 
 					source_x, source_y = source_coords
@@ -753,15 +772,19 @@ class Controller(Generic[Context]):
 
 				# Create descriptive message
 				if params.element_source and params.element_target:
-					msg = f"🖱️ Dragged element '{params.element_source}' to '{params.element_target}'"
+					msg = _("🖱️ Dragged element '{source}' to '{target}'").format(
+						source=params.element_source, target=params.element_target
+					)
 				else:
-					msg = f'🖱️ Dragged from ({source_x}, {source_y}) to ({target_x}, {target_y})'
+					msg = _('🖱️ Dragged from ({source_x}, {source_y}) to ({target_x}, {target_y})').format(
+						source_x=source_x, source_y=source_y, target_x=target_x, target_y=target_y
+					)
 
 				logger.info(msg)
 				return ActionResult(extracted_content=msg, include_in_memory=True)
 
 			except Exception as e:
-				error_msg = f'Failed to perform drag and drop: {str(e)}'
+				error_msg = _('Failed to perform drag and drop: {error}').format(error=str(e))
 				logger.error(error_msg)
 				return ActionResult(error=error_msg, include_in_memory=True)
 

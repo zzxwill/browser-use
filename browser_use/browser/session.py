@@ -596,7 +596,7 @@ class BrowserSession(BaseModel):
 			agent_tab_idx = self.browser_context.pages.index(self.agent_current_page)
 			if old_url != new_url:
 				logger.info(
-					f'👁️ Foregound tab changed by human from [{old_tab_idx}]{_log_pretty_url(old_url)} '
+					f'👁️ Foreground tab changed by human from [{old_tab_idx}]{_log_pretty_url(old_url)} '
 					f'➡️ [{new_tab_idx}]{_log_pretty_url(new_url)} '
 					f'(agent will stay on [{agent_tab_idx}]{_log_pretty_url(agent_url)})'
 				)

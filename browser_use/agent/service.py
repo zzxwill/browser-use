@@ -27,6 +27,7 @@ from langchain_core.messages import (
 )
 from playwright.async_api import Browser, BrowserContext, Page
 from pydantic import BaseModel, ValidationError
+from uuid_extensions import uuid7str
 
 from browser_use.agent.gif import create_history_gif
 from browser_use.agent.memory import Memory, MemoryConfig
@@ -76,6 +77,13 @@ SKIP_LLM_API_KEY_VERIFICATION = os.environ.get('SKIP_LLM_API_KEY_VERIFICATION', 
 def log_response(response: AgentOutput, registry=None) -> None:
 	"""Utility function to log the model's response."""
 
+	# Try to use i18n for logging messages
+	try:
+		from browser_use.i18n import _
+	except ImportError:
+		def _(text):
+			return text
+
 	if 'Success' in response.current_state.evaluation_previous_goal:
 		emoji = '👍'
 	elif 'Failed' in response.current_state.evaluation_previous_goal:
@@ -83,9 +91,16 @@ def log_response(response: AgentOutput, registry=None) -> None:
 	else:
 		emoji = '❓'
 
-	logger.info(f'{emoji} Eval: {response.current_state.evaluation_previous_goal}')
-	logger.info(f'🧠 Memory: {response.current_state.memory}')
-	logger.info(f'🎯 Next goal: {response.current_state.next_goal}')
+	# Try to use i18n for logging messages
+	try:
+		from browser_use.i18n import _
+	except ImportError:
+		def _(text):
+			return text
+	
+	logger.info(_('{emoji} Eval: {evaluation}').format(emoji=emoji, evaluation=response.current_state.evaluation_previous_goal))
+	logger.info(_('🧠 Memory: {memory}').format(memory=response.current_state.memory))
+	logger.info(_('🎯 Next goal: {goal}').format(goal=response.current_state.next_goal))
 
 
 Context = TypeVar('Context')
@@ -130,6 +145,7 @@ class Agent(Generic[Context]):
 		retry_delay: int = 10,
 		override_system_message: str | None = None,
 		extend_system_message: str | None = None,
+		language: str = 'en',
 		max_input_tokens: int = 128000,
 		validate_output: bool = False,
 		message_context: str | None = None,
@@ -164,6 +180,24 @@ class Agent(Generic[Context]):
 		if page_extraction_llm is None:
 			page_extraction_llm = llm
 
+		# Generate unique IDs for this agent session and task early
+		self.session_id: str = uuid7str()
+		self.task_id: str = uuid7str()
+
+		# Create instance-specific logger
+		self._logger = logging.getLogger(f'browser_use.Agent[{self.task_id[-4:]}]')
+		
+		# Initialize i18n system if language is specified
+		if language and language != 'en':
+			try:
+				from browser_use.i18n import set_language
+				set_language(language)
+				self._logger.info(f'🌐 Language set to: {language}')
+			except ImportError:
+				self._logger.warning(f'⚠️ i18n module not available, defaulting to English')
+			except Exception as e:
+				self._logger.warning(f'⚠️ Failed to set language to {language}: {e}')
+
 		# Core components
 		self.task = task
 		self.llm = llm
@@ -179,6 +213,7 @@ class Agent(Generic[Context]):
 			retry_delay=retry_delay,
 			override_system_message=override_system_message,
 			extend_system_message=extend_system_message,
+			language=language,
 			max_input_tokens=max_input_tokens,
 			validate_output=validate_output,
 			message_context=message_context,
@@ -383,7 +418,12 @@ class Agent(Generic[Context]):
 		self.telemetry = ProductTelemetry()
 
 		if self.settings.save_conversation_path:
-			logger.info(f'Saving conversation to {self.settings.save_conversation_path}')
+			try:
+				from browser_use.i18n import _
+			except ImportError:
+				def _(text):
+					return text
+			self._logger.info(_('Saving conversation to {path}').format(path=self.settings.save_conversation_path))
 		self._external_pause_event = asyncio.Event()
 		self._external_pause_event.set()
 
@@ -1120,21 +1160,35 @@ class Agent(Generic[Context]):
 
 	def _log_agent_run(self) -> None:
 		"""Log the agent run"""
-		logger.info(f'🚀 Starting task: {self.task}')
+		try:
+			from browser_use.i18n import _
+		except ImportError:
+			def _(text):
+				return text
+		
+		self._logger.info(_('🚀 Starting task: {task}').format(task=self.task))
 
 		logger.debug(f'Version: {self.version}, Source: {self.source}')
 
 	def _log_step_context(self, current_page, browser_state_summary) -> None:
 		"""Log step context information"""
+		try:
+			from browser_use.i18n import _
+		except ImportError:
+			def _(text):
+				return text
+		
 		url_short = current_page.url[:50] + '...' if len(current_page.url) > 50 else current_page.url
 		interactive_count = len(browser_state_summary.selector_map) if browser_state_summary else 0
-		logger.info(
-			f'📍 Step {self.state.n_steps}: Evaluating page with {interactive_count} interactive elements on: {url_short}'
+		self._logger.info(
+			_('📍 Step {step}: Evaluating page with {count} interactive elements on: {url}').format(
+				step=self.state.n_steps, count=interactive_count, url=url_short
+			)
 		)
 
 	def _log_next_action_summary(self, parsed: 'AgentOutput') -> None:
 		"""Log a comprehensive summary of the next action(s)"""
-		if not (logger.isEnabledFor(logging.DEBUG) and parsed.action):
+		if not (self._logger.isEnabledFor(logging.DEBUG) and parsed.action):
 			return
 
 		action_count = len(parsed.action)
@@ -1167,17 +1221,23 @@ class Agent(Generic[Context]):
 
 		# Create summary based on single vs multi-action
 		if action_count == 1:
-			logger.info(f'⚡️ Decided next action: {action_name}{param_str}')
+			self._logger.info(f'⚡️ Decided next action: {action_name}{param_str}')
 		else:
 			summary_lines = [f'⚡️ Decided next {action_count} multi-actions:']
 			for i, detail in enumerate(action_details):
 				summary_lines.append(f'          {i + 1}. {detail}')
-			logger.info('\n'.join(summary_lines))
+			self._logger.info('\n'.join(summary_lines))
 
 	def _log_step_completion_summary(self, step_start_time: float, result: list[ActionResult]) -> None:
 		"""Log step completion summary with action count, timing, and success/failure stats"""
 		if not result:
 			return
+
+		try:
+			from browser_use.i18n import _
+		except ImportError:
+			def _(text):
+				return text
 
 		step_duration = time.time() - step_start_time
 		action_count = len(result)
@@ -1192,7 +1252,9 @@ class Agent(Generic[Context]):
 		status_parts = [part for part in [success_indicator, failure_indicator] if part]
 		status_str = ' | '.join(status_parts) if status_parts else '✅ 0'
 
-		logger.info(f'📍 Step {self.state.n_steps}: Ran {action_count} actions in {step_duration:.2f}s: {status_str}')
+		self._logger.info(_('📍 Step {step}: Ran {count} actions in {duration:.2f}s: {status}').format(
+			step=self.state.n_steps, count=action_count, duration=step_duration, status=status_str
+		))
 
 	def _log_llm_call_info(self, input_messages: list[BaseMessage], method: str) -> None:
 		"""Log comprehensive information about the LLM call being made"""
@@ -1222,8 +1284,22 @@ class Agent(Generic[Context]):
 
 		term_width = shutil.get_terminal_size((80, 20)).columns
 		print('=' * term_width)
+		try:
+			from browser_use.i18n import _
+		except ImportError:
+			def _(text):
+				return text
+		
 		logger.info(
-			f'🧠 LLM call => {self.chat_model_library} [✉️ {message_count} msg, ~{current_tokens} tk, {total_chars} char{image_status}] {output_format}{tool_info}'
+			_('🧠 LLM call => {library} [✉️ {msg_count} msg, ~{tokens} tk, {chars} char{image_status}] {output_format}{tool_info}').format(
+				library=self.chat_model_library, 
+				msg_count=message_count, 
+				tokens=current_tokens, 
+				chars=total_chars, 
+				image_status=image_status, 
+				output_format=output_format, 
+				tool_info=tool_info
+			)
 		)
 
 	def _log_agent_event(self, max_steps: int, agent_run_error: str | None = None) -> None:
@@ -1471,7 +1547,15 @@ class Agent(Generic[Context]):
 				new_target = new_selector_map.get(action.get_index())  # type: ignore
 				new_target_hash = new_target.hash.branch_path_hash if new_target else None
 				if orig_target_hash != new_target_hash:
-					msg = f'Element index changed after action {i} / {len(actions)}, because page changed.'
+					try:
+						from browser_use.i18n import _
+					except ImportError:
+						def _(text):
+							return text
+					
+					msg = _('Element index changed after action {action} / {total}, because page changed.').format(
+						action=i, total=len(actions)
+					)
 					logger.info(msg)
 					results.append(ActionResult(extracted_content=msg, include_in_memory=True))
 					break
@@ -1501,7 +1585,16 @@ class Agent(Generic[Context]):
 				# Get action name from the action model
 				action_data = action.model_dump(exclude_unset=True)
 				action_name = next(iter(action_data.keys())) if action_data else 'unknown'
-				logger.info(f'☑️ Executed action {i + 1}/{len(actions)}: {action_name}')
+				
+				try:
+					from browser_use.i18n import _
+				except ImportError:
+					def _(text):
+						return text
+				
+				logger.info(_('☑️ Executed action {current}/{total}: {action}').format(
+					current=i + 1, total=len(actions), action=action_name
+				))
 				if results[-1].is_done or results[-1].error or i == len(actions) - 1:
 					break
 
@@ -1566,6 +1659,13 @@ class Agent(Generic[Context]):
 
 	async def log_completion(self) -> None:
 		"""Log the completion of the task"""
+		# Try to use i18n for logging messages
+		try:
+			from browser_use.i18n import _
+		except ImportError:
+			def _(text):
+				return text
+		
 		if self.state.history.is_successful():
 			logger.info('✅ Task completed successfully')
 		else:

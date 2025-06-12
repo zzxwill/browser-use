@@ -50,6 +50,7 @@ class AgentSettings(BaseModel):
 	available_file_paths: list[str] | None = None
 	override_system_message: str | None = None
 	extend_system_message: str | None = None
+	language: str = 'en'  # Language setting for i18n support
 	include_attributes: list[str] = [
 		'title',
 		'type',
