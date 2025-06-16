@@ -180,6 +180,14 @@ class Agent(Generic[Context]):
 				from browser_use.i18n import set_language
 				set_language(language)
 				self._logger.info(f'🌐 Language set to: {language}')
+				
+				# Add Chinese language instructions to system prompt if Chinese is selected
+				if language.startswith('zh'):
+					chinese_instruction = _("IMPORTANT LANGUAGE INSTRUCTION:\n- You MUST communicate in Chinese (中文) for ALL your responses\n- Your evaluation_previous_goal, memory, and next_goal fields must be in Chinese\n- All extracted content and communication should be in Chinese\n- When encountering English websites, translate key information to Chinese for the user\n- Maintain professional and clear Chinese communication throughout")
+					if extend_system_message:
+						extend_system_message = f"{extend_system_message}\n\n{chinese_instruction}"
+					else:
+						extend_system_message = chinese_instruction
 			except ImportError:
 				self._logger.warning(f'⚠️ i18n module not available, defaulting to English')
 			except Exception as e:
@@ -1840,7 +1848,7 @@ class Agent(Generic[Context]):
 
 		# Create planner message history using full message history with all available actions
 		planner_messages = [
-			PlannerPrompt(all_actions).get_system_message(
+			PlannerPrompt(all_actions, language=self.settings.language).get_system_message(
 				is_planner_reasoning=self.settings.is_planner_reasoning,
 				extended_planner_system_prompt=self.settings.extend_planner_system_message,
 			),

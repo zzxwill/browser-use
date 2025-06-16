@@ -4,6 +4,14 @@ from typing import TYPE_CHECKING, Optional
 
 from langchain_core.messages import HumanMessage, SystemMessage
 
+# Import the translation function
+try:
+	from browser_use.i18n import _
+except ImportError:
+	# Fallback if i18n is not available
+	def _(text):
+		return text
+
 if TYPE_CHECKING:
 	from browser_use.agent.views import ActionResult, AgentStepInfo
 	from browser_use.browser.views import BrowserStateSummary
@@ -139,8 +147,9 @@ Interactive elements from top layer of the current page inside the viewport:
 
 
 class PlannerPrompt(SystemPrompt):
-	def __init__(self, available_actions: str):
+	def __init__(self, available_actions: str, language: str = 'en'):
 		self.available_actions = available_actions
+		self.language = language
 
 	def get_system_message(
 		self, is_planner_reasoning: bool, extended_planner_system_prompt: str | None = None
@@ -155,8 +164,7 @@ class PlannerPrompt(SystemPrompt):
 		    SystemMessage or HumanMessage depending on is_planner_reasoning
 		"""
 
-		planner_prompt_text = """
-You are a planning agent that helps break down tasks into smaller steps and reason about the current state.
+		planner_prompt_text = """You are a planning agent that helps break down tasks into smaller steps and reason about the current state.
 Your role is to:
 1. Analyze the current state and history
 2. Evaluate progress towards the ultimate goal
@@ -176,8 +184,11 @@ Your output format should be always a JSON object with the following fields:
 
 Ignore the other AI messages output structures.
 
-Keep your responses concise and focused on actionable insights.
-"""
+Keep your responses concise and focused on actionable insights."""
+
+		# Add Chinese language instruction if language is Chinese
+		if self.language and self.language.startswith('zh'):
+			planner_prompt_text += """\n\nIMPORTANT: You MUST respond in Chinese (中文). All content in your JSON response should be in Chinese, including state_analysis, progress_evaluation, challenges, next_steps, and reasoning fields."""
 
 		if extended_planner_system_prompt:
 			planner_prompt_text += f'\n{extended_planner_system_prompt}'
